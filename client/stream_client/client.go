@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 
+	"google.golang.org/grpc/credentials"
+
 	pb "github.com/linuxxiaoyu/go-grpc-example/proto"
 
 	"google.golang.org/grpc"
@@ -15,7 +17,12 @@ const (
 )
 
 func main() {
-	conn, err := grpc.Dial(":"+PORT, grpc.WithInsecure())
+	c, err := credentials.NewClientTLSFromFile("../../conf/server.pem", "go-grpc-example")
+	if err != nil {
+		log.Fatalf("credentials.NewClientTLSFromFile err: %v", err)
+	}
+
+	conn, err := grpc.Dial(":"+PORT, grpc.WithTransportCredentials(c))
 	if err != nil {
 		log.Fatalf("grpc.Dial err: %v", err)
 	}

@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 
+	"google.golang.org/grpc/credentials"
+
 	pb "github.com/linuxxiaoyu/go-grpc-example/proto"
 	"google.golang.org/grpc"
 )
@@ -16,7 +18,12 @@ const (
 )
 
 func main() {
-	server := grpc.NewServer()
+	c, err := credentials.NewServerTLSFromFile("../../conf/server.pem", "../../conf/server.key")
+	if err != nil {
+		log.Fatalf("credentials.NewServerTLSFromFile err: %v", err)
+	}
+
+	server := grpc.NewServer(grpc.Creds(c))
 	pb.RegisterStreamServiceServer(server, &StreamService{})
 	lis, err := net.Listen("tcp", ":"+PORT)
 	if err != nil {
