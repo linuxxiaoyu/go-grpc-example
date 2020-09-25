@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package proto;
+
+service MathService {
+    rpc Div(MathRequest) returns (MathResponse) {}
+}
+
+message MathRequest {
+    int32 a = 1;
+    int32 b = 2;
+}
+
+message MathResponse {
+    int32 ret = 1;
+}
+
