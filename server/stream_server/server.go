@@ -3,15 +3,15 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 
-	"google.golang.org/grpc/credentials"
-
 	pb "github.com/linuxxiaoyu/go-grpc-example/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type StreamService struct{}
@@ -20,20 +20,20 @@ const (
 	PORT = "9002"
 )
 
-func main() {
+func GetTLSCredentialsByCA() (credentials.TransportCredentials, error) {
 	cert, err := tls.LoadX509KeyPair("../../conf/server/server.pem", "../../conf/server/server.key")
 	if err != nil {
-		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
+		return nil, err
 	}
 
 	certPool := x509.NewCertPool()
 	ca, err := ioutil.ReadFile("../../conf/ca.pem")
 	if err != nil {
-		log.Fatalf("ioutil.ReadFile err: %v", err)
+		return nil, err
 	}
 
 	if ok := certPool.AppendCertsFromPEM(ca); !ok {
-		log.Fatalf("certPool.AppendCertsFromPEM err")
+		return nil, errors.New("certPool.AppendCertsFromPEM err")
 	}
 
 	c := credentials.NewTLS(&tls.Config{
@@ -41,6 +41,15 @@ func main() {
 		ClientAuth:   tls.RequireAndVerifyClientCert,
 		ClientCAs:    certPool,
 	})
+
+	return c, nil
+}
+
+func main() {
+	c, err := GetTLSCredentialsByCA()
+	if err != nil {
+		log.Fatalf("GetTLSCredentialsByCA err: %v", err)
+	}
 
 	server := grpc.NewServer(grpc.Creds(c))
 	pb.RegisterStreamServiceServer(server, &StreamService{})
