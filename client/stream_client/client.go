@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"io"
+	"io/ioutil"
 	"log"
 
 	"google.golang.org/grpc/credentials"
@@ -17,10 +20,26 @@ const (
 )
 
 func main() {
-	c, err := credentials.NewClientTLSFromFile("../../conf/server.pem", "go-grpc-example")
+	cert, err := tls.LoadX509KeyPair("../../conf/client/client.pem", "../../conf/client/client.key")
 	if err != nil {
-		log.Fatalf("credentials.NewClientTLSFromFile err: %v", err)
+		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
 	}
+
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile("../../conf/ca.pem")
+	if err != nil {
+		log.Fatalf("iotuil.ReadFile err: %v", err)
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		log.Fatalf("cartPool.AppendCertsFromPEM err")
+	}
+
+	c := credentials.NewTLS(&tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ServerName:   "go-grpc-example",
+		RootCAs:      certPool,
+	})
 
 	conn, err := grpc.Dial(":"+PORT, grpc.WithTransportCredentials(c))
 	if err != nil {
