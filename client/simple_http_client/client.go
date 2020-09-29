@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"log"
+	"time"
+
+	"google.golang.org/grpc/codes"
+
+	"google.golang.org/grpc/status"
 
 	pb "github.com/linuxxiaoyu/go-grpc-example/proto"
 	"google.golang.org/grpc"
@@ -28,11 +33,20 @@ func main() {
 	}
 	defer conn.Close()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	client := pb.NewSearchServiceClient(conn)
-	resp, err := client.Search(context.Background(), &pb.SearchRequest{
+	resp, err := client.Search(ctx, &pb.SearchRequest{
 		Request: "gRPC",
 	})
 	if err != nil {
+		statusErr, ok := status.FromError(err)
+		if ok {
+			if statusErr.Code() == codes.DeadlineExceeded {
+				log.Fatalln("client.Search err: deadline")
+			}
+		}
 		log.Fatalf("client.Search err: %v", err)
 	}
 

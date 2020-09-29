@@ -5,6 +5,10 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	pb "github.com/linuxxiaoyu/go-grpc-example/proto"
 	"google.golang.org/grpc"
@@ -15,6 +19,14 @@ import (
 type SearchService struct{}
 
 func (s *SearchService) Search(ctx context.Context, r *pb.SearchRequest) (*pb.SearchResponse, error) {
+	for i := 0; i < 3; i++ {
+		if ctx.Err() == context.Canceled {
+			return nil, status.Errorf(codes.Canceled, "SearchService.Search canceled")
+		}
+
+		time.Sleep(time.Second)
+	}
+
 	return &pb.SearchResponse{Response: r.GetRequest() + " HTTP Server"}, nil
 }
 
